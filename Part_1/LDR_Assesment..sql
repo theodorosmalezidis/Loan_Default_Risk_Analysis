@@ -1,45 +1,54 @@
-/*First checking the primary keys in all all tables for nulls and duplicates for referential integrity.*/
+/*================================================
+  Validate primary keys before join and create VIEW
+=================================================*/
+
+-- NULL check on primary keys
 
 select 
-    *
-from
+    * 
+from 
     borrowers_dim
-where 
+where
     borrower_id is null;
 
 select 
     *
 from
     loans_fact
-where 
+where
     loan_id is null;
 
+
+-- Duplicate check on primary keys
+
 select 
-      borrower_id
+      borrower_id  
     , count(*) as duplicates
 from
     borrowers_dim
 group by
     borrower_id
 having
-    count(*)>1
-order by 
+    count(*) > 1
+order by
     duplicates desc;
 
-select
-      loan_id
-    , count(*) as duplicates 
+select 
+      loan_id  
+    , count(*) as duplicates
 from
     loans_fact
 group by
     loan_id
 having
-    count(*)>1
-order by 
+    count(*) > 1
+order by
     duplicates desc;
 
--- no nulls and no duplicates, we are good to go.
 
+-- no nulls and no duplicates
+-- primary keys are clean
+-- safe to create the view
 
 
 
@@ -57,10 +66,13 @@ select
       b.borrower_id
     , b.age
     , b.state
+    , b.education_level
     , b.employment_status
+    , b.years_employed
     , b.annual_income
     , b.credit_score
     , b.home_ownership
+    , b.dependents
     , b.existing_monthly_debt
     , l.loan_id
     , l.application_date

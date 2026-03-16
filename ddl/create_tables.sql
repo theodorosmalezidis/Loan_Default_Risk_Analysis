@@ -24,9 +24,9 @@ create table loans_fact (
     , loan_purpose varchar(50)
     , loan_amount decimal(10, 2)
     , term_months int
-    , interest_rate decimal(3, 2)
+    , interest_rate decimal(5, 2)
     , monthly_payment decimal(10, 2)
-    , dti_ratio decimal(3, 2)
+    , dti_ratio decimal(5, 2)
     , loan_status varchar(20)
     , days_delinquent int
     , defaulted int 
