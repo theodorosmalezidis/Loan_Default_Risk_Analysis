@@ -46,7 +46,7 @@ A stored procedure returning a clean BI-ready Dashboard with all the metrics nec
 - **GitHub :** Platform for hosting
   and sharing scripts and documentation.
 - **Draw.io :** Visual documentation and diagram creation tool.
-- **pgAdmin** PostgreSQL GUI used to create tables and import source CSV files.
+
 
 # Set Up & Data Preparation
 
