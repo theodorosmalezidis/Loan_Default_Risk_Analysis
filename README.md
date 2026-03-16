@@ -38,7 +38,8 @@ A stored procedure returning a clean BI-ready Dashboard with all the metrics nec
 
 # My Tools for the Project
 
-- **PostgreSQL :** Open source relational database for all data storage and querying. 
+- **PostgreSQL :** Open source relational database for all data storage and querying.
+- **pgAdmin** PostgreSQL GUI used to create tables and import source CSV files. 
 - **VS Code :**  Code editor for writing and managing SQL scripts.
 - **SQL :** Primary language for data exploration, analysis and manipulation. 
 - **Git :** Version control for tracking code changes and project history.
