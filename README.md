@@ -22,7 +22,7 @@ They also asked if i can construct a tool for the BI and Risk analysts to monito
 (loans_fact) joined on borrower_id.(diagram created with draw.io).*
 
 For full field descriptions
-see the [Data Dictionary](Data_Dictionary.md).
+see the [Data Dictionary](https://github.com/theodorosmalezidis/Loan_Default_Risk_Analysis/blob/main/Data_Dictionary.md).
 
 # Goals
 
@@ -38,11 +38,13 @@ A three phase process to identify, quantify and control credit risk.
 
 3. Provide data driven recommendations from the analysis to improve the underwriting process, decrease the default rate and control the risk of default.
 
-For Part 1 Overview see 
+For Part 1 Overview see [here](https://github.com/theodorosmalezidis/Loan_Default_Risk_Analysis/tree/main/Part_1).
 
 ## Part 2 - Loan Book Performance Monitoring
 
 A stored procedure returning a clean BI-ready Dashboard with all the metrics necessary to monitor and present the Loan Book's performance monthly to management.
+
+For Part 2 Overview see [here](https://github.com/theodorosmalezidis/Loan_Default_Risk_Analysis/tree/main/Part_2).
 
 
 
