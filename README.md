@@ -38,16 +38,18 @@ A stored procedure returning a clean BI-ready Dashboard with all the metrics nec
 
 # My Tools for the Project
 
-- **PostgreSQL :** A powerhouse opensource database. 
-- **VS Code :** The ultimate code editor.
-- **SQL :** The language to explore and manipulate data. 
-- **Git :** The version control wizard that keeps my code history tidy and collaborative.
-- **GitHub :** Essential for sharing my logic and SQL scripts and analysis, ensuring project tracking.
-- **Draw.io :** I use this tool to create clear visual documentation.
+- **PostgreSQL :** Open source relational database for all data storage and querying. 
+- **VS Code :**  Code editor for writing and managing SQL scripts.
+- **SQL :** Primary language for data exploration, analysis and manipulation. 
+- **Git :** Version control for tracking code changes and project history.
+- **GitHub :** Platform for hosting
+  and sharing scripts and documentation.
+- **Draw.io :** Visual documentation and diagram creation tool.
+- **pgAdmin** PostgreSQL GUI used to create tables and import source CSV files.
 
-# Set Up - Data Preparation
+# Set Up & Data Preparation
 
-1. Create the Database and the Tables and impporte the source csv files using pgAdmin's import tool. 
+1. Create the Database and the Tables and import the source csv files using pgAdmin's import tool. 
 <br><br>
 
 ![visual](visuals_&_assets/ddl_&_import.png)
@@ -64,7 +66,7 @@ A stored procedure returning a clean BI-ready Dashboard with all the metrics nec
 For full field descriptions
 see the [Data Dictionary](https://github.com/theodorosmalezidis/Loan_Default_Risk_Analysis/blob/main/Data_Dictionary.md).
 
-3. Creat View
+2. Data Integrity Checks & Reporting View Creation
 
 Before i explore and analyze the data i decided to create a View from the two tables as a 'reporting mart', to act as a  single source of truth for all the analysis.
 This will make it easier to query and analyze the data without having to join the tables every time avoiding as possible complex queries.
@@ -116,7 +118,7 @@ order by
     duplicates desc;
 ```
 
-No nulls and no duplicates primary keys are clean-safe to create the view.
+No nulls and no duplicates, primary keys are clean — safe to create the view.
 
 - Create View
 
@@ -164,7 +166,8 @@ from
         join loans_fact l
             on b.borrower_id = l.borrower_id;
 ```
-Now i can procced to the analysis.
+With the reporting view in place
+ the analysis can begin.
 
 For Part 1 Overview see [here](https://github.com/theodorosmalezidis/Loan_Default_Risk_Analysis/tree/main/Part_1).
 
