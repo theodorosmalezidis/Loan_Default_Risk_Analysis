@@ -1,131 +1,31 @@
-/*================================================
-  Validate primary keys before join and create VIEW
-=================================================*/
-
--- NULL check on primary keys
-
-select 
-    * 
-from 
-    borrowers_dim
-where
-    borrower_id is null;
-
-select 
-    *
-from
-    loans_fact
-where
-    loan_id is null;
-
-
--- Duplicate check on primary keys
-
-select 
-      borrower_id  
-    , count(*) as duplicates
-from
-    borrowers_dim
-group by
-    borrower_id
-having
-    count(*) > 1
-order by
-    duplicates desc;
-
-select 
-      loan_id  
-    , count(*) as duplicates
-from
-    loans_fact
-group by
-    loan_id
-having
-    count(*) > 1
-order by
-    duplicates desc;
-
-
--- no nulls and no duplicates
--- primary keys are clean
--- safe to create the view
-
-
-
-
-/*I ll create a view from both tables, as a 'reporting mart', to act as a  single source of truth for all the risk analysis.
-This will make it easier to query and analyze the data without having to join the tables every time.
-Also it ll  simplifiy the 'Analysis Phase' avoid as possible complex queries.*/
-
-
-drop view if exists loan_default_risk;
-
-create view loan_default_risk as 
-
-select
-      b.borrower_id
-    , b.age
-    , b.state
-    , b.education_level
-    , b.employment_status
-    , b.years_employed
-    , b.annual_income
-    , b.credit_score
-    , b.home_ownership
-    , b.dependents
-    , b.existing_monthly_debt
-    , l.loan_id
-    , l.application_date
-    , l.loan_purpose
-    , l.loan_amount
-    , l.term_months
-    , l.interest_rate
-    , l.monthly_payment
-    , l.dti_ratio
-    , l.loan_status
-    , l.days_delinquent
-    , l.defaulted
-    , l.was_ever_delayed
-      -- create a risk category column in specific buckets based on loan status and days delinquent
-    , case   
-        when l.loan_status='Paid Off'  then 'Closed'
-        when l.days_delinquent > 90 then 'Defaulted'
-        when l.days_delinquent = 0 then 'Performing'
-        when l.days_delinquent between 1 and 30 then 'Low Risk'
-        when l.days_delinquent between 31 and 90 then 'High Risk'
-        else 'Unknown'
-      end as risk_category
-
-from
-    borrowers_dim b
-        join loans_fact l
-            on b.borrower_id = l.borrower_id;
-
 
 
 
 /* some basic eda*/
 
 
-/* calculate total number of borrowers */
+-- calculate total number of borrowers 
 
 select
      count(distinct borrower_id) as total_borrowers
 from
-    loan_default_risk
+    loan_default_risk;
 
 
-/* calculate total number of loans originated */
+-- calculate total number of loans originated 
 
 select
      count(distinct loan_id) as total_loans
 from
-    loan_default_risk
+    loan_default_risk;
 
-/* more loans than borrowers, which means some borrowers have multiple loans, 
-we can check that later if we want to see if multiple loans increase the risk of default or not,
-but we can find out how many borrowers have multiple loans first. */
 
+
+/* more loans than borrowers, which means some borrowers have multiple loans,
+we can check  if multiple loans to a single borrower have higher default rate */
+
+
+-- first distribution of loans per borrower
 with borrower_loan_counts as (
 
     select
@@ -144,27 +44,70 @@ from
 group by
     loan_count
 order by
-    loan_count desc;
+    loan_count ;
 
 
-/*calculate total default_rate of portfolio to find the actual risk of the portfolio
-and have a benchmark to compare the default rates of different segments and risk buckets we will create later on.*/
+-- then single vs multiple comparison of default rates 
+with borrowers_stats as(
+    select 
+        borrower_id
+      , count(*) as total_loan_count
+      ,max(defaulted) as has_ever_defaulted-- 1 if defaulted in any loan, 0 otherwise
+    from
+      loan_default_risk
+    group by
+        borrower_id   
+)
 
-select
-      sum(defaulted) as total_default_count
-    , count(*) as total_loans
-    , cast(sum(defaulted)*100.0/count(*) as decimal (10,2)) as default_rate
+select 
+    case    
+      when total_loan_count=1 then 'Single Loan' else 'Multiple Loans' end as borrower_category
+  , count(*) as total_borrowers
+  , sum(has_ever_defaulted) total_defaulted
+  , cast(sum(has_ever_defaulted)*100.0/count(*) as decimal (10,2)) as default_rate
+from 
+  borrowers_stats
+group by 
+  1;
+
+-- calculate  loan book default rate and difference to target default rate 
+
+select 
+      count(*) as total_loans
+    , sum(defaulted) as total_defaults
+    , cast(sum(defaulted)*100.0/count(*) as decimal(10,2)) as default_rate
+    , cast(sum(defaulted)*100.0/count(*) as decimal(10,2))-10.0 as diff_vs_target
 from
-    loan_default_risk      
-
-/*which factors have the biggest 'spread' in default rates 
- to see what's actually driving the risk*/
+    loan_default_risk;
 
 
 
+     
+-- Calculate if factors i will measure have any nulls 
+
+select 
+      sum(case when loan_purpose is null then 1 else 0 end) as loan_purpose_nulls
+    , sum(case when home_ownership is null then 1 else 0 end) as home_ownership_nulls
+    , sum(case when employment_status is null then 1 else 0 end) as employment_status_nulls
+    , sum(case when annual_income is null then 1 else 0 end) as annual_income_nulls
+    , sum(case when credit_score is null then 1 else 0 end) as credit_score_nulls
+    , sum(case when interest_rate is null then 1 else 0 end) as interest_rate_nulls
+    , sum(case when dti_ratio is null then 1 else 0 end) as dti_ratio_nulls
+    , sum(case when defaulted is null then 1 else 0 end) as defaulted_nulls
+
+from
+    loan_default_risk;
 
 
-with default_rate_data as(   --creating a cte to calculate default rates for each factor and category, and filter out categories with less than 10 loans to ensure statistical significance.
+
+
+--which factors have the biggest 'spread' in default rates to see what's actually driving the risk
+
+
+
+
+
+with default_rate_data as(   --creating a cte to calculate default rates for each factor and category, and filter out buckets with less than 10 loans to ensure statistical significance.
 
 
     select 
@@ -177,7 +120,7 @@ with default_rate_data as(   --creating a cte to calculate default rates for eac
     group by 
           1
         , 2
-    having count(*)>=10
+    having count(*)>=10 --  -- minimum 10 loans per bucket to ensure statistically meaningful default rates
 
     union all
 
@@ -251,11 +194,10 @@ with default_rate_data as(   --creating a cte to calculate default rates for eac
     select 
           'dti Ratio' as factor
         , case 
-            when dti_ratio < 20 then 'Very Low Risk'
-            when dti_ratio between 20 and 34 then 'Low Risk'
-            when dti_ratio between 35 and 49 then 'Moderate Risk'
-            when dti_ratio between 50 and 74 then 'High Risk'
-            else 'Very High Risk' end as category
+            when dti_ratio < 20 then '< 20'
+            when dti_ratio between 20 and 34 then '20-34'
+            when dti_ratio between 35 and 49 then '35-49'
+            else '>=50' end as category
         , count(*) as loan_volume
         , cast(sum(defaulted)*100.0/count(*) as decimal(10,2)) as default_rate
      from 
@@ -297,74 +239,91 @@ group by
     factor
 order by
     spread desc;
--- annual income shows the lowest spread suggesting it is not an significant predictor
 
-/*After identifing the 3 big factors i drill down more to isolate the buckets with the biggest contibution to default rate of each.*/
 
--- credit score buckets
+/*After identifing the 3 big factors with the biggest contibution to the loan's book total default rate i drill down more to isolate the bucket from each factor with the highest to default rate.*/
 
- select 
-          'Credit Score' as factor
-        , case 
-            when credit_score < 600 then '<600'
-            when credit_score between 600 and 649 then '600-649'
-            when credit_score between 650 and 699 then '650-699'
-            when credit_score between 700 and 749 then '700-749'
-            else '750+' end as category
-        , count(*) as loan_volume
-        , cast(sum(defaulted)*100.0/count(*) as decimal(10,2)) as default_rate
-     from 
-        loan_default_risk
-    group by 
-          1
-        , 2
-      having
-        count(*)>=10
-    order by 
-        default_rate desc;
+with top_factors as(-- cte to create buckets in each of those factors and union all in one table
 
--- interest rate buckets
+  select 
+        'Credit Score' as factor
+      , case 
+          when credit_score < 600 then '<600'
+          when credit_score between 600 and 649 then '600-649'
+          when credit_score between 650 and 699 then '650-699'
+          when credit_score between 700 and 749 then '700-749'
+          else '750+' end as category
+      , count(*) as loan_volume
+      , cast(sum(defaulted)*100.0/count(*) as decimal(10,2)) as default_rate
+  from 
+      loan_default_risk
+  group by 
+        1
+      , 2
+  having
+      count(*)>=10
 
-select 
+  union all
+
+  select 
           'Interest Rate' as factor
-        , case 
-            when interest_rate < 7.5 then '<7.5'
-            when interest_rate between 7.5 and 9.99 then '7.5-9.99'
-            when interest_rate between 10 and 12.49 then '10-12.49'
-            else '>=12.5' end as category
-        , count(*) as loan_volume
-        , cast(sum(defaulted)*100.0/count(*) as decimal(10,2)) as default_rate
-     from 
-        loan_default_risk
-    group by 
-          1
-        , 2
-      having
-        count(*)>=10
-    order by 
-        default_rate desc;
+      , case 
+          when interest_rate < 7.5 then '<7.5'
+          when interest_rate between 7.5 and 9.99 then '7.5-9.99'
+          when interest_rate between 10 and 12.49 then '10-12.49'
+          else '>=12.5' end as category
+      , count(*) as loan_volume
+      , cast(sum(defaulted)*100.0/count(*) as decimal(10,2)) as default_rate
+  from 
+      loan_default_risk
+  group by 
+        1
+      , 2
+  having 
+      count(*)>=10
 
---dti_ratio buckets
+  union all
 
-   select 
-          'dti Ratio' as factor
-        , case 
-            when dti_ratio < 20 then '< 20'
-            when dti_ratio between 20 and 34 then '20-34'
-            when dti_ratio between 35 and 49 then '35-49'
-            when dti_ratio between 50 and 74 then '50-74'
-            else '>75' end as category
-        , count(*) as loan_volume
-        , cast(sum(defaulted)*100.0/count(*) as decimal(10,2)) as default_rate
-     from 
-        loan_default_risk
-    group by 
-          1
-        , 2
-    having
-        count(*)>=10
-    order by 
-        default_rate desc;
+  select 
+        'dti Ratio' as factor
+      , case 
+          when dti_ratio < 20 then '< 20'
+          when dti_ratio between 20 and 34 then '20-34'
+          when dti_ratio between 35 and 49 then '35-49'
+          else '>=50' end as category
+      , count(*) as loan_volume
+      , cast(sum(defaulted)*100.0/count(*) as decimal(10,2)) as default_rate
+  from 
+      loan_default_risk
+  group by 
+        1
+      , 2
+  having
+      count(*)>=10
+)
+,
+ranking as( -- cte to rank the categories in each factor by default rate
+
+  select
+      factor 
+    , category
+    , loan_volume
+    , default_rate
+    , rank() over(partition by factor order by default_rate desc) as dr_rank
+  from 
+    top_factors
+)
+
+select -- final query to find top bucket with highest default rate in each factor
+    factor 
+  , category
+  , loan_volume
+  , default_rate
+from
+  ranking
+where
+  dr_rank=1
+
 
 
 
