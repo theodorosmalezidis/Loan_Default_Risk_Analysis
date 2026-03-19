@@ -400,3 +400,65 @@ where
     case when credit_score  <  600  then 1 else 0 end +
     case when interest_rate >= 12.5 then 1 else 0 end +
     case when dti_ratio     >  50   then 1 else 0 end = 2
+
+
+/*Calculation of default rate under new policy of mmediately decline all applications triggering a Risk Score of 3*/
+
+select
+      count(*) as remaining_loans                                                  
+    , sum(defaulted) as remaining_defaults                                             
+    , cast(sum(defaulted)*100.0/count(*) as decimal(10,2)) as new_default_rate                                    
+    , 14.14 - cast(sum(defaulted)*100.0/count(*) as decimal(10,2))  as improvement                                
+from
+    loan_default_risk
+where
+    case when credit_score < 600  then 1 else 0 end +
+    case when interest_rate >= 12.5 then 1 else 0 end +
+    case when dti_ratio > 50 then 1 else 0 end < 3;
+
+
+
+/*Calculation of default rate under new policy of mmediately decline all applications triggering a Risk Score of 3 and 2*/
+
+select
+      count(*) as remaining_loans                                                  
+    , sum(defaulted) as remaining_defaults                                             
+    , cast(sum(defaulted)*100.0/count(*) as decimal(10,2)) as new_default_rate                                    
+    , 14.14 - cast(sum(defaulted)*100.0/count(*) as decimal(10,2)) as improvement                                
+from
+    loan_default_risk
+where
+    case when credit_score < 600  then 1 else 0 end +
+    case when interest_rate >= 12.5 then 1 else 0 end +
+    case when dti_ratio > 50 then 1 else 0 end < 2;
+
+
+/* Comparison of comparing the NII nd critical numbers for existing loan book applying current Underwriting Policy vs recommended*/
+
+-- Calculate Loan Book Numbers with current Underwriting Policy
+
+select 
+      'Current Policy' as policy
+    , count(*) as total_loans
+    , cast(sum(case when defaulted=0 then (term_months*monthly_payment)-loan_amount else 0 end) as decimal (10,2)) as interest_revenue
+    , cast(sum(case when defaulted=1 then (loan_amount) else 0 end) as decimal (10,2)) as principal_lost
+    , sum(case when defaulted=0 then (term_months*monthly_payment)-loan_amount else 0 end)-sum(case when defaulted=1 then (loan_amount) else 0 end) as nii
+from 
+    loan_default_risk
+
+union all 
+
+-- Calculate Loan Book Numbers with recommended Underwriting Policy
+
+select 
+      'New Policy' as policy
+    , count(*) as total_loans
+    , cast(sum(case when defaulted=0 then (term_months*monthly_payment)-loan_amount else 0 end) as decimal (10,2)) as interest_revenue
+    , cast(sum(case when defaulted=1 then (loan_amount) else 0 end) as decimal (10,2)) as principal_lost
+    , sum(case when defaulted=0 then (term_months*monthly_payment)-loan_amount else 0 end)-sum(case when defaulted=1 then (loan_amount) else 0 end) as nii
+from 
+    loan_default_risk
+where 
+    case when credit_score < 600  then 1 else 0 end +
+    case when interest_rate >= 12.5 then 1 else 0 end +
+    case when dti_ratio > 50 then 1 else 0 end < 2;
