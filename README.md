@@ -158,7 +158,7 @@ from
 ```
 With the reporting view in place the analysis can begin.
 
-#  Loan Default Risk Assessment & Underwriting Strategy
+
 
 
 
