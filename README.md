@@ -58,7 +58,7 @@ see the [Data Dictionary](https://github.com/theodorosmalezidis/Loan_Default_Ris
 
 2. Data Integrity Checks & Reporting View Creation
 
-Before i explore and analyze the data i decided to create a View from the two tables as a 'reporting mart', to act as a  single source of truth for all the analysis.
+Before i explore and analyze the data i decided to create a View from the two tables as a 'reporting mart'.
 This will make it easier to query and analyze the data without having to join the tables every time avoiding as possible complex queries.
 
 - Validate primary keys before join and create VIEW
