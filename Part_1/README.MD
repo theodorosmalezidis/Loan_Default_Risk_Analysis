@@ -491,4 +491,81 @@ Results
 
 The results are a solid justification that the risk score 3 borrowers show dramatically worse fundamentals : credit score 136 points below portfolio average, DTI 24 points above and interest rate 3.4 points higher, and actually confirming the scorecard captures genuinely riskier borrowers and not statistical noise.
 
-# Part 3 - Recommendations
+# Part 3 - Recommendations & Financial Assessment of New Policy
+
+In this final phase i will translate the risk quantification to a new underwriting policy comparing it with the current one and project the potential financial impact to the company's profitability.
+
+The following table (Table 1) has the results from the framework i built in phase 2 to quantify and tier the default risk across the portfolio.
+
+| risk_score | total_loans | total_defaults | default_rate | pct_of_portfolio | pct_of_all_defaults | risk_ratio |
+|------------|-------------|----------------|--------------|------------------|---------------------|------------|
+| 3          | 47          | 19             | 40.43%       | 7.82%            | 22.35%              | 2.86x      |
+| 2          | 81          | 20             | 24.69%       | 13.48%           | 23.53%              | 1.75x      |
+| 1          | 217         | 23             | 10.60%       | 36.11%           | 27.06%              | 0.75x      |
+| 0          | 256         | 23             | 8.98%        | 42.60%           | 27.06%              | 0.64x      |
+
+I focus on the tiers with risk score 2 and 3, where the risk ratio (compares the default rate of each tier
+to the portfolio average) is 1.75x and 2.86x respectively. The total loans of these two tiers are 128 and represent 21.29% of total loan book.
+
+
+
+## New Underwriting Policy 
+
+- Immediately decline all applications triggering a Risk Score of 3 (those failing all three thresholds: Credit Score < 600, DTI > 50, and Interest Rate >= 12.5%).
+- Applications with a Risk Score of 2 must be manually reviewed.
+
+
+```sql
+select
+      count(*) as remaining_loans                                                  
+    , sum(defaulted) as remaining_defaults                                             
+    , cast(sum(defaulted)*100.0/count(*) as decimal(10,2)) as new_default_rate                                    
+    , 14.14 - cast(sum(defaulted)*100.0/count(*) as decimal(10,2))  as improvement                                
+from
+    loan_default_risk
+where
+    case when credit_score < 600  then 1 else 0 end +
+    case when interest_rate >= 12.5 then 1 else 0 end +
+    case when dti_ratio > 50 then 1 else 0 end < 3;
+```
+
+Results
+
+| remaining_loans | remaining_defaults | new_default_rate | improvement |
+|------------|-------------|----------------|--------------|
+| 554         | 66         | 11.91%            | 2.23      |
+
+
+By applying that policy to current loan book the total default rate improves by 2.23 points and drops to 11.91% by rejecting only 7.82% of the applicants (Data from Table 1). A notable improvement but yet above the targret of 10%.
+
+- A more aggressive approach is to decline all applications triggering a Risk Score of 3 and 2.
+
+```sql
+select
+      count(*) as remaining_loans                                                  
+    , sum(defaulted) as remaining_defaults                                             
+    , cast(sum(defaulted)*100.0/count(*) as decimal(10,2)) as new_default_rate                                    
+    , 14.14 - cast(sum(defaulted)*100.0/count(*) as decimal(10,2)) as improvement                                
+from
+    loan_default_risk
+where
+    case when credit_score < 600  then 1 else 0 end +
+    case when interest_rate >= 12.5 then 1 else 0 end +
+    case when dti_ratio > 50 then 1 else 0 end < 2;
+```
+
+Results
+
+| remaining_loans | remaining_defaults | new_default_rate | improvement |
+|------------|-------------|----------------|--------------|
+| 473         | 46        | 9.73%       | 4.41     |
+
+By applying that policy to current loan book the total default rate improves by 4.41 points and drops to 9.73% - below the target of default rate, by rejecting 21.3% of the applicants (Data from Table 1). 
+But i have to prove that this aggresive approach has a benefit to the company's financials.
+
+I will do that by comparing the NII for existing loan book aplying current Underwriting Policy vs recommended,
+where NII (Net Interest Income) = Interest Rate Revenue - Principal Losses
+
+
+
+

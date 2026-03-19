@@ -2,7 +2,7 @@
 
 In this scenario the management of a mid-size consumer lending company is concerned about the rising default rate on personal loans.
 
-The management wants data-driven insights about the factors driving the increase of default rate and recommendations about the underwriting policy to lower and maintain the default rate below the target of 10%.
+The management wants data-driven insights about the factors driving the increase of default rate and recommendations about the underwriting policy to lower and maintain the default rate below the target of 10% and present a financial assessment of the proposed underwriting policy changes.
 
 They also asked if i can construct a tool for the BI and Risk analysts to monitor and present monthly the numbers of Loan Book's performance.
 
@@ -27,7 +27,7 @@ A three phase process to identify, quantify and control default risk.
 
 2. Create a framework to quantify the risk.
 
-3. Provide data driven recommendations from the analysis to improve the underwriting process, decrease the default rate and control the risk of default.
+3. Provide data driven recommendations from the analysis to improve the underwriting process, decrease the default rate and present financial outcomes of the proposed underwriting policy changes.
 
 
 
