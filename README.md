@@ -594,11 +594,17 @@ Results
 
 
 **risk_score:**  Risk tier assigned to each loan based on how many of the three high-risk thresholds it breaches. Ranges from 0 to 3.
+
 **total_loans:** Nr. of loans in that risk tier.
+
 **total_defaults:** Nr. of defaulted loans in that risk tier.
+
 **default_rate:** Default rate within that specific risk tier.
+
 **pct_of_portfolio:** Percentage of total loans in that specific risk tier.
+
 **pct_of_all_defaults:** Percentage of total portfolio defaults in that specific risk tier.
+
 **risk_ratio:** The most important metric. Compares the default rate of each tier
 to the portfolio average. Quantifies how many times more likely is a loan in this risk score to default compared to the average loan in the portfolio.
 
